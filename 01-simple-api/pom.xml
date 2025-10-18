@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>io.github.tiagoiwamoto</groupId>
-    <artifactId>simple-api</artifactId>
+    <artifactId>01-simple-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>simple-api</name>
     <description>simple-api</description>
