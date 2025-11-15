@@ -30,13 +30,13 @@ public class HttpClientConfig {
     @Value("${poke.baseurl}")
     private String pokeapiBaseUrl;
 
-    @Value("${api.client.retry.attemps}")
+    @Value("${api.client.retry.attemps:3}")
     private Integer retryAttemps;
-    @Value("${api.client.retry.jitter}")
+    @Value("${api.client.retry.jitter:0.5}")
     private Integer retryJitter;
-    @Value("${api.client.retry.backoff.delay.milis}")
+    @Value("${api.client.retry.backoff.delay.milis:1000}")
     private Long retryBackoff;
-    @Value("${api.client.timout.milis}")
+    @Value("${api.client.timout.milis:1000}")
     private Long timoutMilis;
 
 
