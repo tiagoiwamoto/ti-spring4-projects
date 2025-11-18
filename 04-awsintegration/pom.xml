@@ -66,6 +66,20 @@
             <artifactId>lambda</artifactId>
             <version>2.38.7</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/sqs -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+            <version>2.38.7</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.awspring.cloud/spring-cloud-aws-starter-sqs -->
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter-sqs</artifactId>
+            <version>3.4.1</version>
+        </dependency>
     </dependencies>
 
     <build>
