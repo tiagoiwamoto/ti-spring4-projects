@@ -1,0 +1,11 @@
+{
+  "namespace": "io.github.tiagoiwamoto.avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "email", "type": ["null", "string"], "default": null}
+  ]
+}
+
