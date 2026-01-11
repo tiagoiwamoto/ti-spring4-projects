@@ -1,0 +1,27 @@
+[
+  {
+    "name": "br.com.tiagoiwamoto.lambda.SqsEventHandler"
+  },
+  {
+    "name": "br.com.tiagoiwamoto.lambda.MessageProcessor"
+  },
+  {
+    "name": "com.amazonaws.services.lambda.runtime.events.SQSEvent"
+  },
+  {
+    "name": "com.amazonaws.services.lambda.runtime.events.SQSEvent$SQSMessage"
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.JsonNode"
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.ObjectMapper"
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.node.ObjectNode"
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.node.ArrayNode"
+  }
+]
+

@@ -6,6 +6,9 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.security.NoSuchAlgorithmException;
+
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -15,7 +18,7 @@ public class StartCallEntrypoint {
     private final PokePort pokePort;
 
     @EventListener(ApplicationReadyEvent.class)
-    public void execute() {
+    public void execute() throws NoSuchAlgorithmException {
         log.info("### STARTING SWAPI CALL PROCESS ###");
 
         SwapiPersonResponse personResponse = swapiPort.getPersonById(1L);
@@ -27,6 +30,7 @@ public class StartCallEntrypoint {
         var pokemonResponse = pokePort.getPokemon();
         log.info("POKEMON NAME: {}", pokemonResponse.get("name"));
         log.info("### POKEAPI CALL PROCESS FINISHED ###");
+
     }
 
 }
