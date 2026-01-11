@@ -1,55 +1,96 @@
 version: "3.8"
 
-services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.5
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+name: spring4-kafka-ssl
 
+services:
   kafka:
-    image: confluentinc/cp-kafka:7.4.5
-    container_name: kafka
-    depends_on:
-      - zookeeper
+    image: apache/kafka:4.0.0
+    container_name: spring4-kafka
     ports:
       - "9093:9093"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # Only SSL listener enabled
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL
-      KAFKA_LISTENERS: SSL://0.0.0.0:9093
-      # Advertise localhost so host clients (e.g., your Spring app) connect to localhost:9093 matching CN=localhost
-      KAFKA_ADVERTISED_LISTENERS: SSL://localhost:9093
+      # KRaft (Kafka 4) single-node controller+broker
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: 1
+      # controller quorum voters: format <id>@<host>:<controllerPort>
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9094"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Listeners: expose SSL for clients and CONTROLLER for internal controller
+      KAFKA_LISTENERS: SSL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: SSL://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,CONTROLLER:PLAINTEXT
+
+      # Security / replication settings
       KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
-      # SSL keystore/truststore (we generated PKCS12 keystores)
-      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/keystore.jks
+      # SSL: use file locations (keystore/truststore placed in volume)
+      # These map to server.properties keys (ssl.keystore.location, ssl.keystore.password, etc.)
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.keystore.p12
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.keystore.p12
       KAFKA_SSL_KEYSTORE_PASSWORD: changeit
+      KAFKA_SSL_KEY_CREDENTIALS: kafka.key.password
       KAFKA_SSL_KEY_PASSWORD: changeit
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka.keystore.password
       KAFKA_SSL_KEYSTORE_TYPE: PKCS12
-      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/truststore.jks
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.truststore.p12
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.truststore.p12
       KAFKA_SSL_TRUSTSTORE_PASSWORD: changeit
       KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
-      # No client auth (mTLS) for dev
       KAFKA_SSL_CLIENT_AUTH: none
+
     volumes:
       - ./src/main/resources/certs:/etc/kafka/secrets:ro
     healthcheck:
-      test: ["CMD", "/bin/bash", "-lc", "kafka-topics --bootstrap-server localhost:9093 --command-config <(echo -e 'ssl.truststore.location=/etc/kafka/secrets/truststore.jks\nssl.truststore.password=changeit') --list || exit 1"]
+      test: ["CMD", "/bin/bash", "-lc", "kafka-topics --bootstrap-server localhost:9093 --command-config <(echo -e 'ssl.truststore.location=/etc/kafka/secrets/kafka.truststore.p12\nssl.truststore.password=changeit') --list || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
 
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.5
+    container_name: spring4-schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: SSL://kafka:9093
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    volumes:
+      - ./schema-registry/schema-registry.properties:/etc/schema-registry/schema-registry.properties:ro
+      - ./src/main/resources/certs:/etc/schema-registry/secrets:ro
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: spring4-kafka-ui
+    depends_on:
+      - kafka
+      - schema-registry
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "local"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9093"
+      # Kafka connection over SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: "SSL"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: "/etc/kafka/secrets/kafka.truststore.p12"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: "changeit"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: "PKCS12"
+      # optional: if client auth is used
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: "/etc/kafka/secrets/kafka-client.keystore.p12"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: "changeit"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: "changeit"
+      # point UI to Schema Registry
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY_URL: "http://schema-registry:8081"
+    volumes:
+      - ./src/main/resources/certs:/etc/kafka/secrets:ro
+
 networks:
   default:
     name: kafka-ssl-net
-
