@@ -1,0 +1,37 @@
+services:
+  iggy:
+    image: apache/iggy:latest
+    container_name: iggy
+    restart: unless-stopped
+    cap_add:
+      - SYS_NICE
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    environment:
+      - IGGY_ROOT_USERNAME=iggy
+      - IGGY_ROOT_PASSWORD=iggy
+      - IGGY_HTTP_ENABLED=true
+      - IGGY_HTTP_ADDRESS=0.0.0.0:80
+      - IGGY_TCP_ENABLED=true
+      - IGGY_TCP_ADDRESS=0.0.0.0:3000
+      - IGGY_QUIC_ENABLED=false
+      - IGGY_WEBSOCKET_ENABLED=false
+      - IGGY_HEARTBEAT_ENABLED=true
+      - IGGY_HEARTBEAT_INTERVAL=5s
+    ports:
+      - "3010:80"
+      - "5100:3000"
+    networks:
+      - iggy
+    volumes:
+      - iggy:/iggy/local_data
+
+networks:
+  iggy:
+
+volumes:
+  iggy:
